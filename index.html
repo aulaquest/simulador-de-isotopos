@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Atómico (Diseño Final)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .control-button {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .control-button:active {
+            transform: scale(0.95);
+        }
+        .proton-style {
+            background: radial-gradient(circle at 30% 30%, #f87171, #dc2626);
+            box-shadow: inset 0 0 4px rgba(255,255,255,0.6), 0 3px 5px rgba(0,0,0,0.3);
+        }
+        .neutron-style {
+            background: radial-gradient(circle at 30% 30%, #a3a3a3, #737373);
+            box-shadow: inset 0 0 4px rgba(255,255,255,0.6), 0 3px 5px rgba(0,0,0,0.3);
+        }
+        .electron-style {
+            width: 12px;
+            height: 12px;
+            background-color: #38bdf8;
+            border-radius: 50%;
+            position: absolute;
+            transform-origin: center;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+        }
+        #atom-visualization {
+            width: 100%;
+            height: 100%;
+            min-height: 400px; /* Adjusted for mobile */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .orbit {
+            position: absolute;
+            border: 1.5px solid #94a3b8;
+            border-radius: 50%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        @keyframes orbit-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            25% { transform: translate(0.5px, -0.5px) rotate(0.1deg); }
+            50% { transform: translate(-0.5px, 0.5px) rotate(-0.1deg); }
+            75% { transform: translate(0.5px, 0.5px) rotate(0.1deg); }
+        }
+        .unstable-shake {
+            animation: shake 0.3s infinite cubic-bezier(.36,.07,.19,.97);
+        }
+        
+        /* Styles for a self-contained periodic table */
+        #periodic-table-grid {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(0, 1fr));
+            gap: 3px; /* Adjusted gap for smaller screens */
+        }
+        .element-cell {
+            position: relative;
+            aspect-ratio: 1 / 1; /* Make cells square */
+            border: 1px solid #cbd5e1;
+            border-radius: 4px; /* Slightly less rounded */
+            padding: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            overflow: hidden;
+        }
+        .element-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .element-cell.selected {
+            border-width: 2px;
+            border-color: #f97316;
+            transform: scale(1.05);
+        }
+        .element-number {
+            font-size: 0.45rem;
+            line-height: 1;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            color: #475569;
+        }
+        .element-symbol {
+            font-size: 0.7rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .element-name {
+            font-size: 0.4rem; /* Adjusted for smaller cells */
+            line-height: 1;
+            text-align: center;
+            margin-top: 1px;
+            white-space: normal;
+        }
+        
+        /* Responsive adjustments for larger screens */
+        @media (min-width: 768px) {
+            .element-cell {
+                border-radius: 8px;
+                padding: 2px;
+            }
+            .element-number {
+                font-size: 0.5rem;
+            }
+            .element-symbol {
+                font-size: 0.9rem;
+            }
+            .element-name {
+                font-size: 0.45rem;
+                margin-top: 2px;
+            }
+        }
+
+        .alkali-metal { background-color: #fecaca; }
+        .alkaline-earth-metal { background-color: #fed7aa; }
+        .post-transition-metal { background-color: #bfdbfe; }
+        .metalloid { background-color: #a7f3d0; }
+        .reactive-nonmetal { background-color: #bae6fd; }
+        .noble-gas { background-color: #ddd6fe; }
+
+        @property --p{
+          syntax: '<number>';
+          inherits: true;
+          initial-value: 0;
+        }
+        .pie {
+          transition: --p 0.5s;
+          background: 
+            radial-gradient(farthest-side, white 79%, transparent 80% 100%, white 100%),
+            conic-gradient(#22c55e calc(var(--p) * 1%), #e5e7eb 0);
+          width: 70px;
+          height: 70px;
+        }
+        
+        .fun-fact-box {
+            background-color: #e0f2fe;
+            border-left: 4px solid #0ea5e9;
+            padding: 12px;
+            border-radius: 0 8px 8px 0;
+        }
+
+    </style>
+</head>
+<body class="p-2 md:p-4 lg:p-6">
+
+    <header class="text-center mb-6">
+        
+    </header>
+
+    <div class="max-w-screen-xl mx-auto">
+        <!-- Section 1: Periodic Table -->
+        <div class="bg-white p-2 sm:p-4 rounded-xl shadow-md mb-6">
+            <div id="periodic-table-grid"></div>
+        </div>
+
+        <!-- Section 2: Atom Visualization + Controls -->
+        <main class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Left Column: Atom Visualization -->
+            <div class="md:col-span-2 bg-white p-4 rounded-xl shadow-md flex flex-col items-center justify-center overflow-hidden">
+                <div id="atom-visualization"></div>
+            </div>
+            <!-- Right Column: Controls -->
+            <div class="md:col-span-1 flex flex-col gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-md flex-grow flex flex-col">
+                    <h2 class="text-lg font-bold text-slate-700 text-center mb-2">Crea tu Isótopo</h2>
+                    
+                    <div class="relative w-24 h-24 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center my-2 mx-auto shadow-inner">
+                        <span id="display-mass-number" class="absolute top-2 left-2 text-sm font-bold text-slate-500"></span>
+                        <span id="display-symbol" class="text-4xl font-bold text-slate-800"></span>
+                        <span id="display-atomic-number" class="absolute bottom-2 left-2 text-sm font-bold text-red-500"></span>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-2 my-2">
+                        <span class="font-medium text-base text-slate-700">Neutrones</span>
+                        <div class="flex items-center gap-2">
+                            <button id="remove-neutron" class="control-button bg-slate-400 hover:bg-slate-500 text-white w-7 h-7 rounded-md text-xl font-bold flex items-center justify-center">-</button>
+                            <span id="control-neutron-number" class="text-xl font-bold w-10 text-center text-slate-800">0</span>
+                            <button id="add-neutron" class="control-button bg-slate-400 hover:bg-slate-500 text-white w-7 h-7 rounded-md text-xl font-bold flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3 border-slate-200">
+                    
+                    <div class="mt-auto">
+                         <h3 class="text-base font-bold text-slate-800 mb-2 text-center" id="data-element-title">Hidrógeno-1</h3>
+                        <ul class="space-y-1 text-xs text-slate-600">
+                            <li><strong>Símbolo:</strong> <span id="data-symbol">H</span></li>
+                            <li><strong>Número Atómico (Z):</strong> <span id="data-atomic-number">1</span></li>
+                            <li><strong>Número Másico (A):</strong> <span id="data-mass-number">1</span></li>
+                            <li><strong>Masa (uma):</strong> <span id="data-isotopic-mass">1.00782</span></li>
+                            <li><strong>Config. Electrónica:</strong> <span id="data-electron-config">1s¹</span></li>
+                            <li><strong>Estado (ambiente):</strong> <span id="data-state">Gas</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Section 3: Isotope Stability and Abundance -->
+        <div class="mt-4 bg-white p-4 rounded-xl shadow-md">
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                 <div class="flex flex-col sm:flex-row justify-around items-center gap-6">
+                     <div class="text-center">
+                         <h3 class="font-semibold mb-2 text-slate-600 text-base">Estabilidad</h3>
+                         <span id="stability-status" class="font-bold text-2xl">Estable</span>
+                     </div>
+                     <div class="text-center">
+                         <h3 class="font-semibold mb-2 text-slate-600 text-base">Abundancia Natural</h3>
+                         <div class="flex items-center justify-center gap-4">
+                             <div id="abundance-pie" class="pie rounded-full"></div>
+                             <p id="abundance-text" class="text-2xl font-bold text-slate-800">99.98%</p>
+                         </div>
+                     </div>
+                 </div>
+                 <div class="fun-fact-box">
+                    <h3 class="font-bold text-sky-800 mb-1">Sabías que...</h3>
+                    <p id="fun-fact-text" class="text-sm text-sky-900"></p>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ELEMENT_DATA = {
+            1: { name: 'Hidrógeno', symbol: 'H', category: 'reactive-nonmetal', state: 'Gas', electron_config: '1s¹', common_neutrons: 0, isotopes: { 
+                0: { name: 'Protio', stable: true, abundance: 99.985, mass: 1.00783, fun_fact: 'Es el isótopo más común del universo y el componente principal de las estrellas como el Sol.' }, 
+                1: { name: 'Deuterio', stable: true, abundance: 0.015, mass: 2.01410, fun_fact: 'Se usa en reactores nucleares como moderador y en investigación de fusión nuclear. El "agua pesada" está formada con deuterio.' }, 
+                2: { name: 'Tritio', stable: false, abundance: 0, mass: 3.01605, fun_fact: 'Es radiactivo (semivida de 12.3 años) y se usa en señales de salida autoiluminadas y en investigación de armas nucleares.' } 
+            } },
+            2: { name: 'Helio', symbol: 'He', category: 'noble-gas', state: 'Gas', electron_config: '1s²', common_neutrons: 2, isotopes: { 
+                1: { stable: true, abundance: 0.0001, mass: 3.01603, fun_fact: 'El Helio-3 es muy raro en la Tierra pero se cree que es abundante en la Luna. Es un candidato para combustible en futuras centrales de fusión nuclear.' }, 
+                2: { stable: true, abundance: 99.9999, mass: 4.00260, fun_fact: 'Este es el helio común que llena globos y dirigibles. Se produce por la desintegración radiactiva de elementos más pesados en la corteza terrestre.' } 
+            } },
+            3: { name: 'Litio', symbol: 'Li', category: 'alkali-metal', state: 'Sólido', electron_config: '[He] 2s¹', common_neutrons: 4, isotopes: { 
+                3: { stable: true, abundance: 7.59, mass: 6.01512, fun_fact: 'El Litio-6 es la materia prima para producir tritio en reactores de fusión.' }, 
+                4: { stable: true, abundance: 92.41, mass: 7.01600, fun_fact: 'El Litio-7 se utiliza como refrigerante en algunos diseños de reactores nucleares de sal fundida.' } 
+            } },
+            4: { name: 'Berilio', symbol: 'Be', category: 'alkaline-earth-metal', state: 'Sólido', electron_config: '[He] 2s²', common_neutrons: 5, isotopes: { 
+                5: { stable: true, abundance: 100, mass: 9.01218, fun_fact: 'El Berilio-9 es el único isótopo estable del berilio. Es transparente a los rayos X, por lo que se usa en las ventanas de las máquinas de rayos X.' } 
+            } },
+            5: { name: 'Boro', symbol: 'B', category: 'metalloid', state: 'Sólido', electron_config: '[He] 2s² 2p¹', common_neutrons: 6, isotopes: { 
+                5: { stable: true, abundance: 19.9, mass: 10.01294, fun_fact: 'El Boro-10 es un excelente absorbente de neutrones, por lo que se utiliza en las barras de control de los reactores nucleares para regular la fisión.' }, 
+                6: { stable: true, abundance: 80.1, mass: 11.00931, fun_fact: 'Es el isótopo más común del boro y no tiene aplicaciones nucleares significativas como su hermano menor.' } 
+            } },
+            6: { name: 'Carbono', symbol: 'C', category: 'reactive-nonmetal', state: 'Sólido', electron_config: '[He] 2s² 2p²', common_neutrons: 6, isotopes: { 
+                6: { stable: true, abundance: 98.93, mass: 12.00000, fun_fact: 'El Carbono-12 es el estándar universal. Por definición, su masa es exactamente 12 uma, y se usa para definir la masa de todos los demás átomos.' }, 
+                7: { stable: true, abundance: 1.07, mass: 13.00335, fun_fact: 'Se utiliza en estudios metabólicos y en espectroscopia de RMN para determinar la estructura de moléculas orgánicas.' }, 
+                8: { stable: false, abundance: 0, mass: 14.00324, fun_fact: 'El famoso Carbono-14 se usa para la datación por radiocarbono de fósiles y restos arqueológicos. Tiene una semivida de unos 5,730 años.' } 
+            } },
+            7: { name: 'Nitrógeno', symbol: 'N', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[He] 2s² 2p³', common_neutrons: 7, isotopes: { 
+                7: { stable: true, abundance: 99.636, mass: 14.00307, fun_fact: 'Compone aproximadamente el 78% de la atmósfera terrestre. ¡El aire que respiras es mayoritariamente Nitrógeno-14!' }, 
+                8: { stable: true, abundance: 0.364, mass: 15.00011, fun_fact: 'Se usa como marcador no radiactivo en agricultura para rastrear la absorción de fertilizantes por las plantas.' } 
+            } },
+            8: { name: 'Oxígeno', symbol: 'O', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[He] 2s² 2p⁴', common_neutrons: 8, isotopes: { 
+                8: { stable: true, abundance: 99.757, mass: 15.99491, fun_fact: 'Es el isótopo de oxígeno más común, esencial para la respiración de la mayoría de los seres vivos.' }, 
+                9: { stable: true, abundance: 0.038, mass: 16.99913, fun_fact: 'Aunque raro, es el único isótopo estable del oxígeno con espín nuclear, lo que lo hace útil en estudios de RMN.' }, 
+                10: { stable: true, abundance: 0.205, mass: 17.99916, fun_fact: 'Se usa en paleoclimatología. La proporción de O-18 en los núcleos de hielo ayuda a determinar las temperaturas de la Tierra en el pasado.' } 
+            } },
+            9: { name: 'Flúor', symbol: 'F', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[He] 2s² 2p⁵', common_neutrons: 10, isotopes: { 10: { stable: true, abundance: 100, mass: 18.99840, fun_fact: 'El Flúor-19 es el único isótopo estable del flúor, el elemento más electronegativo de todos.' } } },
+            10: { name: 'Neón', symbol: 'Ne', category: 'noble-gas', state: 'Gas', electron_config: '[He] 2s² 2p⁶', common_neutrons: 10, isotopes: { 10: { stable: true, abundance: 90.48, mass: 19.99244, fun_fact: 'El Neón-20 es el principal responsable del característico brillo rojo-anaranjado de las luces de neón.' }, 11: { stable: true, abundance: 0.27, mass: 20.99385 }, 12: { stable: true, abundance: 9.25, mass: 21.99139 } } },
+            11: { name: 'Sodio', symbol: 'Na', category: 'alkali-metal', state: 'Sólido', electron_config: '[Ne] 3s¹', common_neutrons: 12, isotopes: { 12: { stable: true, abundance: 100, mass: 22.98977, fun_fact: 'El Sodio-23 es el único isótopo estable del sodio. Las lámparas de vapor de sodio, que emiten una luz amarilla brillante, lo utilizan.' } } },
+            12: { name: 'Magnesio', symbol: 'Mg', category: 'alkaline-earth-metal', state: 'Sólido', electron_config: '[Ne] 3s²', common_neutrons: 12, isotopes: { 12: { stable: true, abundance: 78.99, mass: 23.98504, fun_fact: 'El Magnesio-24 es el isótopo más común y es esencial para la vida, jugando un papel clave en la clorofila de las plantas.' }, 13: { stable: true, abundance: 10.00, mass: 24.98584 }, 14: { stable: true, abundance: 11.01, mass: 25.98259 } } },
+            13: { name: 'Aluminio', symbol: 'Al', category: 'post-transition-metal', state: 'Sólido', electron_config: '[Ne] 3s² 3p¹', common_neutrons: 14, isotopes: { 14: { stable: true, abundance: 100, mass: 26.98154, fun_fact: 'Siendo el único isótopo estable, el Aluminio-27 conforma todo el aluminio natural que usamos en latas, aviones y papel de aluminio.' } } },
+            14: { name: 'Silicio', symbol: 'Si', category: 'metalloid', state: 'Sólido', electron_config: '[Ne] 3s² 3p²', common_neutrons: 14, isotopes: { 14: { stable: true, abundance: 92.23, mass: 27.97693, fun_fact: 'El Silicio-28 es la base de la industria de los semiconductores. ¡Tu ordenador o móvil funciona gracias a él!' }, 15: { stable: true, abundance: 4.67, mass: 28.97649 }, 16: { stable: true, abundance: 3.10, mass: 29.97377 } } },
+            15: { name: 'Fósforo', symbol: 'P', category: 'reactive-nonmetal', state: 'Sólido', electron_config: '[Ne] 3s² 3p³', common_neutrons: 16, isotopes: { 16: { stable: true, abundance: 100, mass: 30.97376, fun_fact: 'El Fósforo-31 es vital para la vida. Forma parte del ADN, el ARN y el ATP, la principal molécula de energía de las células.' } } },
+            16: { name: 'Azufre', symbol: 'S', category: 'reactive-nonmetal', state: 'Sólido', electron_config: '[Ne] 3s² 3p⁴', common_neutrons: 16, isotopes: { 16: { stable: true, abundance: 95.02, mass: 31.97207, fun_fact: 'El Azufre-32 es el isótopo más abundante. Es responsable del olor característico de los huevos podridos (en forma de H₂S).' }, 17: { stable: true, abundance: 0.75, mass: 32.97146 } } },
+            17: { name: 'Cloro', symbol: 'Cl', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[Ne] 3s² 3p⁵', common_neutrons: 18, isotopes: { 18: { stable: true, abundance: 75.77, mass: 34.96885, fun_fact: 'La proporción entre Cloro-35 y Cloro-37 es muy constante, lo que ayuda a los científicos a calcular la masa atómica del cloro con gran precisión.' }, 20: { stable: true, abundance: 24.23, mass: 36.96590 } } },
+            18: { name: 'Argón', symbol: 'Ar', category: 'noble-gas', state: 'Gas', electron_config: '[Ne] 3s² 3p⁶', common_neutrons: 22, isotopes: { 22: { stable: true, abundance: 99.60, mass: 39.96238, fun_fact: 'El Argón-40 se forma por la desintegración del Potasio-40 en las rocas. Se usa para la datación por Potasio-Argón, midiendo la edad de rocas muy antiguas.' } } },
+        };
+        const PT_LAYOUT = [ {n:1,x:1,y:1},{n:2,x:18,y:1},{n:3,x:1,y:2},{n:4,x:2,y:2},{n:5,x:13,y:2},{n:6,x:14,y:2},{n:7,x:15,y:2},{n:8,x:16,y:2},{n:9,x:17,y:2},{n:10,x:18,y:2}, {n:11,x:1,y:3},{n:12,x:2,y:3},{n:13,x:13,y:3},{n:14,x:14,y:3},{n:15,x:15,y:3},{n:16,x:16,y:3},{n:17,x:17,y:3},{n:18,x:18,y:3}, ];
+        
+        let state = { protons: 1, neutrons: 0 };
+        const dom = {
+            atomVisualization: document.getElementById('atom-visualization'),
+            periodicTableGrid: document.getElementById('periodic-table-grid'),
+            controlNeutronNumber: document.getElementById('control-neutron-number'),
+            addNeutronBtn: document.getElementById('add-neutron'),
+            removeNeutronBtn: document.getElementById('remove-neutron'),
+            displayMassNumber: document.getElementById('display-mass-number'),
+            displaySymbol: document.getElementById('display-symbol'),
+            displayAtomicNumber: document.getElementById('display-atomic-number'),
+            dataElementTitle: document.getElementById('data-element-title'),
+            dataSymbol: document.getElementById('data-symbol'),
+            dataAtomicNumber: document.getElementById('data-atomic-number'),
+            dataMassNumber: document.getElementById('data-mass-number'),
+            dataIsotopicMass: document.getElementById('data-isotopic-mass'),
+            dataElectronConfig: document.getElementById('data-electron-config'),
+            dataState: document.getElementById('data-state'),
+            stabilityStatus: document.getElementById('stability-status'),
+            abundancePie: document.getElementById('abundance-pie'),
+            abundanceText: document.getElementById('abundance-text'),
+            funFactText: document.getElementById('fun-fact-text'),
+        };
+        
+        function init() {
+            PT_LAYOUT.forEach(pos => {
+                const data = ELEMENT_DATA[pos.n];
+                const cell = document.createElement('div');
+                cell.className = `element-cell ${data.category || 'unknown'}`;
+                cell.dataset.atomicNumber = pos.n;
+                cell.style.gridColumnStart = pos.x;
+                cell.style.gridRowStart = pos.y;
+                cell.innerHTML = `<div class="element-number">${pos.n}</div><div class="element-symbol">${data.symbol}</div><div class="element-name">${data.name}</div>`;
+                cell.addEventListener('click', () => selectElement(pos.n));
+                dom.periodicTableGrid.appendChild(cell);
+            });
+            dom.addNeutronBtn.addEventListener('click', () => changeNeutrons(1));
+            dom.removeNeutronBtn.addEventListener('click', () => changeNeutrons(-1));
+            selectElement(1);
+        }
+
+        function changeNeutrons(amount) {
+            const element = ELEMENT_DATA[state.protons];
+            if (amount > 0 && state.neutrons >= element.common_neutrons + 4) {
+                return;
+            }
+            const newNeutronCount = state.neutrons + amount;
+            if (newNeutronCount >= 0) {
+                state.neutrons = newNeutronCount;
+                update();
+            }
+        }
+        
+        function selectElement(atomicNumber) {
+            const element = ELEMENT_DATA[atomicNumber];
+            if (element) {
+                state.protons = atomicNumber;
+                state.neutrons = element.common_neutrons;
+                update();
+            }
+        }
+
+        function update() {
+            const { protons, neutrons } = state;
+            const element = ELEMENT_DATA[protons];
+            if (!element) return;
+            
+            const massNumber = protons + neutrons;
+            const isotope = element.isotopes[neutrons];
+            
+            dom.controlNeutronNumber.textContent = neutrons;
+            dom.displayMassNumber.textContent = massNumber;
+            dom.displaySymbol.textContent = element.symbol;
+            dom.displayAtomicNumber.textContent = protons;
+
+            const isotopeName = (isotope && isotope.name) ? isotope.name : `${element.name}-${massNumber}`;
+            dom.dataElementTitle.textContent = isotopeName;
+            
+            dom.dataSymbol.textContent = element.symbol;
+            dom.dataAtomicNumber.textContent = protons;
+            dom.dataMassNumber.textContent = massNumber;
+            dom.dataElectronConfig.textContent = element.electron_config;
+            dom.dataState.textContent = element.state;
+            
+            if (isotope && isotope.stable) {
+                dom.stabilityStatus.textContent = 'Estable';
+                dom.stabilityStatus.className = 'font-bold text-2xl text-green-600';
+                dom.dataIsotopicMass.textContent = `${isotope.mass.toFixed(5)}`;
+                dom.abundanceText.textContent = `${isotope.abundance}%`;
+                dom.abundancePie.style.setProperty('--p', isotope.abundance);
+                dom.atomVisualization.classList.remove('unstable-shake');
+            } else {
+                dom.stabilityStatus.textContent = 'Inestable';
+                dom.stabilityStatus.className = 'font-bold text-2xl text-orange-600';
+                dom.dataIsotopicMass.textContent = (isotope && isotope.mass) ? `${isotope.mass.toFixed(5)}` : 'N/A';
+                dom.abundanceText.textContent = '0%';
+                dom.abundancePie.style.setProperty('--p', 0);
+                dom.atomVisualization.classList.add('unstable-shake');
+            }
+            
+            dom.funFactText.textContent = (isotope && isotope.fun_fact) ? isotope.fun_fact : 'No hay curiosidades disponibles para este isótopo.';
+
+            updatePeriodicTableSelection(protons);
+            drawAtom(protons, neutrons);
+        }
+        
+        function drawAtom(protons, neutrons) {
+            dom.atomVisualization.innerHTML = ''; 
+            const nucleusContainer = document.createElement('div');
+            nucleusContainer.style.position = 'relative';
+            nucleusContainer.style.zIndex = '1';
+            
+            const totalNucleons = protons + neutrons;
+            if (totalNucleons > 0) {
+                const particleSize = Math.max(8, 24 - Math.log(totalNucleons+1) * 2.5);
+                const radius = Math.min(60, particleSize * Math.pow(totalNucleons, 0.33) * 0.5);
+                let particles = Array(protons).fill('proton').concat(Array(neutrons).fill('neutron'));
+                particles.sort(() => Math.random() - 0.5);
+
+                particles.forEach((type) => {
+                    const angle = Math.random() * 2 * Math.PI;
+                    const r = Math.random() * radius;
+                    const x = r * Math.cos(angle);
+                    const y = r * Math.sin(angle);
+                    const particleEl = document.createElement('div');
+                    particleEl.className = `rounded-full ${type}-style`;
+                    particleEl.style.cssText = `width: ${particleSize}px; height: ${particleSize}px; position: absolute; left: calc(50% + ${x}px); top: calc(50% + ${y}px); transform: translate(-50%, -50%);`;
+                    nucleusContainer.appendChild(particleEl);
+                });
+            }
+            dom.atomVisualization.appendChild(nucleusContainer);
+
+            const electronsPerShell = [2, 8, 8, 18];
+            let electronsToPlace = protons; 
+            for(let i=0; i < electronsPerShell.length && electronsToPlace > 0; i++) {
+                const orbitRadius = Math.max(80, (nucleusContainer.getBoundingClientRect().width / 2 + 50)) + i * 45;
+                const orbit = document.createElement('div');
+                orbit.className = 'orbit';
+                orbit.style.width = `${orbitRadius * 2}px`;
+                orbit.style.height = `${orbitRadius * 2}px`;
+                dom.atomVisualization.appendChild(orbit);
+                
+                const electronsInThisShell = Math.min(electronsToPlace, electronsPerShell[i]);
+                const rotationSpeed = (20 - i * 3) + Math.random() * 4 - 2;
+
+                const animationContainer = document.createElement('div');
+                animationContainer.style.cssText = `width:100%; height:100%; position:absolute; animation: orbit-rotate ${rotationSpeed}s linear infinite;`;
+                orbit.appendChild(animationContainer);
+
+                for(let j=0; j < electronsInThisShell; j++) {
+                    const angle = (j / electronsInThisShell) * 2 * Math.PI;
+                    const electron = document.createElement('div');
+                    electron.className = 'electron-style';
+                    electron.style.left = `${50 + 50 * Math.cos(angle)}%`;
+                    electron.style.top = `${50 + 50 * Math.sin(angle)}%`;
+                    electron.style.transform = 'translate(-50%, -50%)';
+                    animationContainer.appendChild(electron);
+                }
+                electronsToPlace -= electronsInThisShell;
+            }
+        }
+        
+        function updatePeriodicTableSelection(atomicNumber) {
+            document.querySelectorAll('.element-cell').forEach(cell => {
+                cell.classList.toggle('selected', cell.dataset.atomicNumber == atomicNumber);
+            });
+        }
+        
+        init();
+    });
+    </script>
+</body>
+</html>
