@@ -168,13 +168,13 @@
 
     </style>
 </head>
-<body class="p-2 md:p-4 lg:p-6">
+<body class="p-2 md:p-4 lg:p-6 flex flex-col min-h-screen">
 
-    <header class="text-center mb-6">
+    <div class="max-w-screen-xl mx-auto w-full">
+        <header class="text-center mb-6">
+           
+        </header>
         
-    </header>
-
-    <div class="max-w-screen-xl mx-auto">
         <!-- Section 1: Periodic Table -->
         <div class="bg-white p-2 sm:p-4 rounded-xl shadow-md mb-6">
             <div id="periodic-table-grid"></div>
@@ -192,9 +192,9 @@
                     <h2 class="text-lg font-bold text-slate-700 text-center mb-2">Crea tu Isótopo</h2>
                     
                     <div class="relative w-24 h-24 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center my-2 mx-auto shadow-inner">
-                        <span id="display-mass-number" class="absolute top-2 left-2 text-sm font-bold text-slate-500"></span>
+                        <span id="display-atomic-number" class="absolute top-2 left-2 text-sm font-bold text-red-500"></span>
                         <span id="display-symbol" class="text-4xl font-bold text-slate-800"></span>
-                        <span id="display-atomic-number" class="absolute bottom-2 left-2 text-sm font-bold text-red-500"></span>
+                        <span id="display-mass-number" class="absolute bottom-2 left-2 text-sm font-bold text-slate-500"></span>
                     </div>
 
                     <div class="flex flex-col items-center gap-2 my-2">
@@ -247,6 +247,15 @@
         </div>
     </div>
 
+    <footer class="text-center mt-auto py-6 text-sm text-slate-500">
+        <p>
+            Simulación creada por 
+            <a href="https://aulaquest.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-sky-700 hover:text-sky-500">
+                AulaQuest
+            </a>
+        </p>
+    </footer>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const ELEMENT_DATA = {
@@ -285,14 +294,32 @@
                 10: { stable: true, abundance: 0.205, mass: 17.99916, fun_fact: 'Se usa en paleoclimatología. La proporción de O-18 en los núcleos de hielo ayuda a determinar las temperaturas de la Tierra en el pasado.' } 
             } },
             9: { name: 'Flúor', symbol: 'F', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[He] 2s² 2p⁵', common_neutrons: 10, isotopes: { 10: { stable: true, abundance: 100, mass: 18.99840, fun_fact: 'El Flúor-19 es el único isótopo estable del flúor, el elemento más electronegativo de todos.' } } },
-            10: { name: 'Neón', symbol: 'Ne', category: 'noble-gas', state: 'Gas', electron_config: '[He] 2s² 2p⁶', common_neutrons: 10, isotopes: { 10: { stable: true, abundance: 90.48, mass: 19.99244, fun_fact: 'El Neón-20 es el principal responsable del característico brillo rojo-anaranjado de las luces de neón.' }, 11: { stable: true, abundance: 0.27, mass: 20.99385 }, 12: { stable: true, abundance: 9.25, mass: 21.99139 } } },
+            10: { name: 'Neón', symbol: 'Ne', category: 'noble-gas', state: 'Gas', electron_config: '[He] 2s² 2p⁶', common_neutrons: 10, isotopes: { 
+                10: { stable: true, abundance: 90.48, mass: 19.99244, fun_fact: 'El Neón-20 es el principal responsable del característico brillo rojo-anaranjado de las luces de neón.' }, 
+                11: { stable: true, abundance: 0.27, mass: 20.99385, fun_fact: 'La presencia de Neón-21 en meteoritos ayuda a los científicos a saber cuánto tiempo han estado expuestos a los rayos cósmicos en el espacio.' }, 
+                12: { stable: true, abundance: 9.25, mass: 21.99139, fun_fact: 'Se forma en las estrellas durante la nucleosíntesis estelar, a partir de la captura de una partícula alfa por el Oxígeno-18.' } 
+            } },
             11: { name: 'Sodio', symbol: 'Na', category: 'alkali-metal', state: 'Sólido', electron_config: '[Ne] 3s¹', common_neutrons: 12, isotopes: { 12: { stable: true, abundance: 100, mass: 22.98977, fun_fact: 'El Sodio-23 es el único isótopo estable del sodio. Las lámparas de vapor de sodio, que emiten una luz amarilla brillante, lo utilizan.' } } },
-            12: { name: 'Magnesio', symbol: 'Mg', category: 'alkaline-earth-metal', state: 'Sólido', electron_config: '[Ne] 3s²', common_neutrons: 12, isotopes: { 12: { stable: true, abundance: 78.99, mass: 23.98504, fun_fact: 'El Magnesio-24 es el isótopo más común y es esencial para la vida, jugando un papel clave en la clorofila de las plantas.' }, 13: { stable: true, abundance: 10.00, mass: 24.98584 }, 14: { stable: true, abundance: 11.01, mass: 25.98259 } } },
+            12: { name: 'Magnesio', symbol: 'Mg', category: 'alkaline-earth-metal', state: 'Sólido', electron_config: '[Ne] 3s²', common_neutrons: 12, isotopes: { 
+                12: { stable: true, abundance: 78.99, mass: 23.98504, fun_fact: 'El Magnesio-24 es el isótopo más común y es esencial para la vida, jugando un papel clave en la clorofila de las plantas.' }, 
+                13: { stable: true, abundance: 10.00, mass: 24.98584, fun_fact: 'Es el único isótopo estable del magnesio con espín nuclear, lo que lo hace valioso en estudios de espectroscopia RMN.' }, 
+                14: { stable: true, abundance: 11.01, mass: 25.98259, fun_fact: 'La abundancia de Magnesio-26 se estudia en meteoritos para investigar la historia temprana de nuestro sistema solar.' } 
+            } },
             13: { name: 'Aluminio', symbol: 'Al', category: 'post-transition-metal', state: 'Sólido', electron_config: '[Ne] 3s² 3p¹', common_neutrons: 14, isotopes: { 14: { stable: true, abundance: 100, mass: 26.98154, fun_fact: 'Siendo el único isótopo estable, el Aluminio-27 conforma todo el aluminio natural que usamos en latas, aviones y papel de aluminio.' } } },
-            14: { name: 'Silicio', symbol: 'Si', category: 'metalloid', state: 'Sólido', electron_config: '[Ne] 3s² 3p²', common_neutrons: 14, isotopes: { 14: { stable: true, abundance: 92.23, mass: 27.97693, fun_fact: 'El Silicio-28 es la base de la industria de los semiconductores. ¡Tu ordenador o móvil funciona gracias a él!' }, 15: { stable: true, abundance: 4.67, mass: 28.97649 }, 16: { stable: true, abundance: 3.10, mass: 29.97377 } } },
+            14: { name: 'Silicio', symbol: 'Si', category: 'metalloid', state: 'Sólido', electron_config: '[Ne] 3s² 3p²', common_neutrons: 14, isotopes: { 
+                14: { stable: true, abundance: 92.23, mass: 27.97693, fun_fact: 'El Silicio-28 es la base de la industria de los semiconductores. ¡Tu ordenador o móvil funciona gracias a él!' }, 
+                15: { stable: true, abundance: 4.67, mass: 28.97649, fun_fact: 'Su espín nuclear lo hace útil para la espectroscopia RMN de silicio, una técnica clave para analizar materiales y minerales.' }, 
+                16: { stable: true, abundance: 3.10, mass: 29.97377, fun_fact: 'Se utiliza como material de partida para crear isótopos radiactivos como el Fósforo-30, usado en tomografías por emisión de positrones (PET).' } 
+            } },
             15: { name: 'Fósforo', symbol: 'P', category: 'reactive-nonmetal', state: 'Sólido', electron_config: '[Ne] 3s² 3p³', common_neutrons: 16, isotopes: { 16: { stable: true, abundance: 100, mass: 30.97376, fun_fact: 'El Fósforo-31 es vital para la vida. Forma parte del ADN, el ARN y el ATP, la principal molécula de energía de las células.' } } },
-            16: { name: 'Azufre', symbol: 'S', category: 'reactive-nonmetal', state: 'Sólido', electron_config: '[Ne] 3s² 3p⁴', common_neutrons: 16, isotopes: { 16: { stable: true, abundance: 95.02, mass: 31.97207, fun_fact: 'El Azufre-32 es el isótopo más abundante. Es responsable del olor característico de los huevos podridos (en forma de H₂S).' }, 17: { stable: true, abundance: 0.75, mass: 32.97146 } } },
-            17: { name: 'Cloro', symbol: 'Cl', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[Ne] 3s² 3p⁵', common_neutrons: 18, isotopes: { 18: { stable: true, abundance: 75.77, mass: 34.96885, fun_fact: 'La proporción entre Cloro-35 y Cloro-37 es muy constante, lo que ayuda a los científicos a calcular la masa atómica del cloro con gran precisión.' }, 20: { stable: true, abundance: 24.23, mass: 36.96590 } } },
+            16: { name: 'Azufre', symbol: 'S', category: 'reactive-nonmetal', state: 'Sólido', electron_config: '[Ne] 3s² 3p⁴', common_neutrons: 16, isotopes: { 
+                16: { stable: true, abundance: 95.02, mass: 31.97207, fun_fact: 'El Azufre-32 es el isótopo más abundante. Es responsable del olor característico de los huevos podridos (en forma de H₂S).' }, 
+                17: { stable: true, abundance: 0.75, mass: 32.97146, fun_fact: 'Es el único isótopo estable del azufre con espín nuclear, lo que lo hace útil para el análisis de compuestos que contienen azufre.' } 
+            } },
+            17: { name: 'Cloro', symbol: 'Cl', category: 'reactive-nonmetal', state: 'Gas', electron_config: '[Ne] 3s² 3p⁵', common_neutrons: 18, isotopes: { 
+                18: { stable: true, abundance: 75.77, mass: 34.96885, fun_fact: 'La proporción entre Cloro-35 y Cloro-37 es muy constante, lo que ayuda a los científicos a calcular la masa atómica del cloro con gran precisión.' }, 
+                20: { stable: true, abundance: 24.23, mass: 36.96590, fun_fact: 'Fue clave en el primer experimento para detectar neutrinos solares, convirtiéndose en Argón-37 al ser golpeado por un neutrino.' } 
+            } },
             18: { name: 'Argón', symbol: 'Ar', category: 'noble-gas', state: 'Gas', electron_config: '[Ne] 3s² 3p⁶', common_neutrons: 22, isotopes: { 22: { stable: true, abundance: 99.60, mass: 39.96238, fun_fact: 'El Argón-40 se forma por la desintegración del Potasio-40 en las rocas. Se usa para la datación por Potasio-Argón, midiendo la edad de rocas muy antiguas.' } } },
         };
         const PT_LAYOUT = [ {n:1,x:1,y:1},{n:2,x:18,y:1},{n:3,x:1,y:2},{n:4,x:2,y:2},{n:5,x:13,y:2},{n:6,x:14,y:2},{n:7,x:15,y:2},{n:8,x:16,y:2},{n:9,x:17,y:2},{n:10,x:18,y:2}, {n:11,x:1,y:3},{n:12,x:2,y:3},{n:13,x:13,y:3},{n:14,x:14,y:3},{n:15,x:15,y:3},{n:16,x:16,y:3},{n:17,x:17,y:3},{n:18,x:18,y:3}, ];
