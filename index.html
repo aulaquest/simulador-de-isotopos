@@ -67,18 +67,15 @@
             animation: shake 0.3s infinite cubic-bezier(.36,.07,.19,.97);
         }
         
-        /* Styles for a self-contained periodic table */
+        /* --- START: Periodic Table Styles --- */
         #periodic-table-grid {
             display: grid;
-            grid-template-columns: repeat(18, minmax(0, 1fr));
-            gap: 3px; /* Adjusted gap for smaller screens */
+            transition: grid-template-columns 0.3s ease;
         }
         .element-cell {
             position: relative;
-            aspect-ratio: 1 / 1; /* Make cells square */
+            aspect-ratio: 1 / 1;
             border: 1px solid #cbd5e1;
-            border-radius: 4px; /* Slightly less rounded */
-            padding: 1px;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
             display: flex;
@@ -99,32 +96,45 @@
             border-color: #f97316;
             transform: scale(1.05);
         }
+        
+        /* Mobile-first styles for the table */
+        #periodic-table-grid {
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 4px;
+        }
+        .element-cell {
+            border-radius: 6px;
+            padding: 2px;
+        }
         .element-number {
-            font-size: 0.45rem;
+            font-size: 0.5rem; /* Larger for mobile */
             line-height: 1;
             position: absolute;
-            top: 2px;
+            top: 3px;
             left: 3px;
             color: #475569;
         }
         .element-symbol {
-            font-size: 0.7rem;
+            font-size: 0.85rem; /* Larger for mobile */
             font-weight: 700;
             line-height: 1;
         }
         .element-name {
-            font-size: 0.4rem; /* Adjusted for smaller cells */
+            font-size: 0.45rem; /* Larger for mobile */
             line-height: 1;
             text-align: center;
-            margin-top: 1px;
+            margin-top: 2px;
             white-space: normal;
         }
-        
-        /* Responsive adjustments for larger screens */
+
+        /* Desktop adjustments */
         @media (min-width: 768px) {
+            #periodic-table-grid {
+                grid-template-columns: repeat(18, minmax(0, 1fr));
+                gap: 5px;
+            }
             .element-cell {
                 border-radius: 8px;
-                padding: 2px;
             }
             .element-number {
                 font-size: 0.5rem;
@@ -134,9 +144,9 @@
             }
             .element-name {
                 font-size: 0.45rem;
-                margin-top: 2px;
             }
         }
+        /* --- END: Periodic Table Styles --- */
 
         .alkali-metal { background-color: #fecaca; }
         .alkaline-earth-metal { background-color: #fed7aa; }
@@ -348,20 +358,52 @@
         };
         
         function init() {
+            // Create cells but defer positioning to the layout function
             PT_LAYOUT.forEach(pos => {
                 const data = ELEMENT_DATA[pos.n];
                 const cell = document.createElement('div');
                 cell.className = `element-cell ${data.category || 'unknown'}`;
                 cell.dataset.atomicNumber = pos.n;
-                cell.style.gridColumnStart = pos.x;
-                cell.style.gridRowStart = pos.y;
                 cell.innerHTML = `<div class="element-number">${pos.n}</div><div class="element-symbol">${data.symbol}</div><div class="element-name">${data.name}</div>`;
                 cell.addEventListener('click', () => selectElement(pos.n));
                 dom.periodicTableGrid.appendChild(cell);
             });
+
+            updatePeriodicTableLayout(); // Initial layout
+            window.addEventListener('resize', updatePeriodicTableLayout); // Update on resize
+
             dom.addNeutronBtn.addEventListener('click', () => changeNeutrons(1));
             dom.removeNeutronBtn.addEventListener('click', () => changeNeutrons(-1));
             selectElement(1);
+        }
+
+        function updatePeriodicTableLayout() {
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                // On mobile, use a compressed 8-column layout
+                dom.periodicTableGrid.style.gridTemplateColumns = 'repeat(8, minmax(0, 1fr))';
+                document.querySelectorAll('.element-cell').forEach(cell => {
+                    const atomicNumber = parseInt(cell.dataset.atomicNumber);
+                    const pos = PT_LAYOUT.find(p => p.n === atomicNumber);
+                    if (pos) {
+                        // Move elements from columns 13-18 to 3-8
+                        cell.style.gridColumnStart = pos.x > 2 ? pos.x - 10 : pos.x;
+                        cell.style.gridRowStart = pos.y;
+                    }
+                });
+            } else {
+                // On desktop, use the standard 18-column layout
+                dom.periodicTableGrid.style.gridTemplateColumns = 'repeat(18, minmax(0, 1fr))';
+                document.querySelectorAll('.element-cell').forEach(cell => {
+                    const atomicNumber = parseInt(cell.dataset.atomicNumber);
+                    const pos = PT_LAYOUT.find(p => p.n === atomicNumber);
+                    if (pos) {
+                        cell.style.gridColumnStart = pos.x;
+                        cell.style.gridRowStart = pos.y;
+                    }
+                });
+            }
         }
 
         function changeNeutrons(amount) {
